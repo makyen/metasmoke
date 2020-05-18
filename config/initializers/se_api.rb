@@ -4,21 +4,18 @@ module SE
 
     attr_accessor :logger
 
-    def get_response(*args, **opts, &block)
+    def get_response(uri_or_host, path = nil, port = nil, &block)
       setup_logger
 
-      if args.size > 0 && !args[0].is_a?(URI)
-        args[0] = URI(args[0])
-      end
-
-      resp = Net::HTTP.get_response(*args, **opts, &block)
+      resp = Net::HTTP.get_response(uri_or_host, path = path, port = port, &block)
       if resp.code.start_with? '2'
-        logger.info "#{resp.code} GET #{args[0]}"
+        logger.info "#{resp.code} GET #{uri_or_host}"
       else
-        logger.error "#{resp.code} on GET to #{args[0]}"
-        logger.error 'Following: args, opts, response body'
-        logger.error args.to_s
-        logger.error opts.to_s
+        logger.error "#{resp.code} on GET to #{uri_or_host}"
+        logger.error 'Following: uri_or_host, path, port, response body'
+        logger.error uri_or_host.to_s
+        logger.error path.to_s
+        logger.error port.to_s
         logger.error resp.body
         logger.error ''
         logger.error ' ===================================================== '
