@@ -5,10 +5,10 @@ module SE
 
     attr_accessor :logger
 
-    def get_response(uri_or_host, path: nil, port: nil, &block)
+    def get_response(uri_or_host, path:nil, port:nil, &block)
       setup_logger
 
-      resp = Net::HTTP.get_response(uri_or_host, path: path, port: port, &block)
+      resp = Net::HTTP.get_response(uri_or_host, path:path, port:port, &block)
       if resp.code.start_with? '2'
         logger.info "#{resp.code} GET #{uri_or_host}"
       else
