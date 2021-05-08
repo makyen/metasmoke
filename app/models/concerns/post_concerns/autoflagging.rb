@@ -82,18 +82,31 @@ module PostConcerns::Autoflagging
 
         core_count = (max_flags / 2.0).ceil
         other_count = max_flags - core_count
+        core_users = users.with_role(:core)
+        non_core_users = users.without_role(:core)
+        more_core_users_than_not = core_users.length > non_core_users.length
 
         core_users_used = []
         Rails.logger.warn "[autoflagging] #{id}: core..."
-        users.with_role(:core).shuffle.each do |user|
+        core_users.shuffle.each do |user|
           break if core_count <= 0
           core_count -= post.send_autoflag(user, dry_run, available_user_ids[user.id])
           core_users_used << user
         end
 
+        unused_core_users = core_users - core_users_used
+
+        remaining_users = if more_core_users_than_not
+                            # Equally share remaining flags between core and non-core users.
+                            (non_core_users + unused_core_users).shuffle
+                          else
+                            # Give non-core users priority
+                            # Go through all non-core users first; then add core users at the end. See #146
+                            (non_core_users.shuffle + unused_core_users.shuffle)
+                          end
+
         Rails.logger.warn "[autoflagging] #{id}: plebs..."
-        # Go through all non-core users first; then add core users at the end. See #146
-        ((users.without_role(:core).shuffle + users.with_role(:core).shuffle) - core_users_used).each do |user|
+        remaining_users.each do |user|
           break if other_count <= 0
           other_count -= post.send_autoflag(user, dry_run, available_user_ids[user.id])
         end
